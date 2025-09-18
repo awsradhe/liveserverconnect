@@ -19,4 +19,4 @@ use App\Http\Controllers\HomeController;
 // });
 
 Route::get('/',[HomeController::class,'index']);
-Route::get('/nextpages',[HomeController::class,'nextpages'])->name('nextpages');
+Route::get('/nextpages',[HomeController::class,'nextpages'])->name('nextpages');   #dd
