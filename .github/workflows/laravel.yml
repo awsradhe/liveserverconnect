@@ -22,7 +22,8 @@ jobs:
 
       - name: Archive project
         run: |
-          tar czf laravel-app.tar.gz --exclude='.git' --exclude='node_modules' .
+          tar czf laravel-app.tar.gz --warning=no-file-changed --exclude='.git' --exclude='node_modules' .
+
 
       - name: Deploy to AWS EC2
         run: |
