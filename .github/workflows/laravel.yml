@@ -20,21 +20,44 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 13.222.186.214 >> ~/.ssh/known_hosts
 
+      - name: Archive project
+        run: |
+          tar czf laravel-app.tar.gz --exclude='.git' --exclude='node_modules' .
+
       - name: Deploy to AWS EC2
         run: |
+          # Copy the tarball to EC2
+          scp -i ~/.ssh/id_rsa laravel-app.tar.gz ubuntu@13.222.186.214:/home/ubuntu/
+
+          # SSH into EC2 and deploy
           ssh -i ~/.ssh/id_rsa ubuntu@13.222.186.214 << 'EOF'
-            cd /var/www/laravel || exit 1
-            if [ ! -d ".git" ]; then
-              git clone https://github.com/awsradhe/liveserverconnect.git .
-            else
-              git pull origin main
-            fi
+            set -e
+
+            # Create project directory if it doesn't exist
+            mkdir -p /var/www/laravel
+
+            # Clean old project files (optional)
+            rm -rf /var/www/laravel/*
+
+            # Extract new code
+            tar -xzf /home/ubuntu/laravel-app.tar.gz -C /var/www/laravel
+
+            # Run Laravel setup
+            cd /var/www/laravel
             composer install --no-interaction --prefer-dist --optimize-autoloader
+
+            # Copy .env file if needed (you must have it already or set up ENV handling)
+            # cp /home/ubuntu/.env /var/www/laravel/.env
+
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
+
+            # Set correct permissions
             sudo chown -R www-data:www-data /var/www/laravel
             sudo chmod -R 775 /var/www/laravel/storage
-            exit
+
+            # Cleanup
+            rm /home/ubuntu/laravel-app.tar.gz
           EOF
